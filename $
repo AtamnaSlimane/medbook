@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Carbon\Carbon;
+use App\Models\Appointment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
+class DoctorController extends Controller
+{
+public function dashboard()
+{
+    $appointments = Auth::user()->appointmentsAsDoctor()
+        ->whereIn('status', ['pending', 'booked','completed'])
+        ->orderBy('appointment_date')
+        ->get();
+
+   // dd($appointments); // Debugging: Dumps appointments data
+
+    return view('doctor.dashboard', compact('appointments'));
+}
+    public function updateStatus(Appointment $appointment, Request $request)
+    {
+        abort_unless($appointment->doctor_id === Auth::id(), 403);
+
+        $request->validate([
+            'status' => 'required|in:completed,canceled'
+        ]);
+
+        $appointment->update(['status' => $request->status]);
+        return back()->with('success', 'Status updated');
+    }
+
+public function accept(Appointment $appointment)
+{
+    if ($appointment->doctor_id !== auth()->id()) {
+        abort(403); // Prevent unauthorized updates
+    }
+
+    $appointment->update(['status' => 'booked']);
+
+    return redirect()->back()->with('success', 'Appointment accepted.');
+}
+
+public function reject(Appointment $appointment)
+{
+    if ($appointment->doctor_id !== auth()->id()) {
+        abort(403);
+    }
+
+    $appointment->update(['status' => 'rejected']);
+
+    return redirect()->back()->with('success', 'Appointment rejected.');
+}
+public function getAppointment()
+{
+    $appointments = Appointment::where('doctor_id', auth()->id())->get();
+
+    $events = $appointments->map(function ($appointment) {
+        return [
+            'id' => $appointment->id,
+            'title' => 'Appointment with Patient ' . $appointment->patient_id,
+            'start' => $appointment->appointment_date,
+            'end' => \Carbon\Carbon::parse($appointment->appointment_date)->addMinutes($appointment->duration)->toIso8601String(),
+            'status' => $appointment->status,
+        ];
+    });
+
+    return response()->json($events);
+}
+public function getAppointments()
+{
+    $appointments = Appointment::where('doctor_id', auth()->id())->get();
+
+    $events = $appointments->map(function ($appointment) {
+        return [
+            'id' => $appointment->id,
+            'title' => 'Appointment with ' . $appointment->patient->name,
+            'start' => $appointment->appointment_date,
+            'end' => Carbon::parse($appointment->appointment_date)->addMinutes($appointment->duration),
+            'status' => $appointment->status,
+        ];
+    });
+
+    return response()->json($events);
+}
+}

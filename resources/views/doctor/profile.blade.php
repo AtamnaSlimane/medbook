@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDBook - My Profile</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: white;
+        }
+        .med-teal {
+            color: #00CCCC;
+        }
+        .btn-teal {
+            background-color: #00CCCC;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-teal:hover {
+            box-shadow: 0 4px 15px rgba(0, 204, 204, 0.5);
+            transform: translateY(-2px);
+        }
+        .card {
+            background: rgba(40, 40, 40, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+            border-radius: 16px;
+        }
+        .card:hover {
+            box-shadow: 0 15px 40px rgba(0, 204, 204, 0.15);
+            transform: translateY(-5px);
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background-color: rgba(0, 204, 204, 0.1);
+        }
+        .sidebar-link.active {
+            border-left: 3px solid #00CCCC;
+        }
+        .input-field {
+            background-color: rgba(51, 51, 51, 0.8);
+            border-color: #666666;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: #00CCCC;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 204, 204, 0.2);
+        }
+        .profile-pic-wrapper {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 50%;
+            margin: 0 auto;
+            border: 3px solid rgba(0, 204, 204, 0.5);
+            box-shadow: 0 0 15px rgba(0, 204, 204, 0.3);
+        }
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-pic-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 204, 204, 0.7);
+            overflow: hidden;
+            width: 100%;
+            height: 0;
+            transition: .5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-pic-wrapper:hover .profile-pic-overlay {
+            height: 100%;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #00CCCC;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background-color: rgba(51, 51, 51, 0.8);
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #00CCCC;
+            color: #121212;
+            font-weight: 600;
+        }
+        .tab-button:hover:not(.active) {
+            background-color: rgba(0, 204, 204, 0.2);
+        }
+        .tab-content {
+            display: none;
+            padding: 24px;
+            background-color: rgba(40, 40, 40, 0.7);
+            border-radius: 0 8px 8px 8px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .logo-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                text-shadow: 0 0 5px rgba(0, 204, 204, 0.5);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(0, 204, 204, 0.8);
+            }
+            100% {
+                text-shadow: 0 0 5px rgba(0, 204, 204, 0.5);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-900 p-6 flex flex-col">
+            <div class="mb-10">
+                <a href="{{ route('home') }}" class="flex items-center">
+                    <span class="med-teal text-3xl font-bold logo-pulse">MED</span><span class="text-3xl font-bold text-white">Book</span>
+                </a>
+            </div>
+<nav class="flex-1">
+                <a href="{{ route('doctor.dashboard') }}" class="sidebar-link">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{{route('doctor.appointments')}}" class="sidebar-link">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    My Appointments
+                </a>
+                <a href="{{route('doctor.schedule')}}" class="sidebar-link">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    My Schedule
+                </a>
+                <a href="{{route('doctor.patients')}}" class="sidebar-link">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    My Patients
+                </a>
+<a href="{{ route('profile.view') }}" class="sidebar-link">
+                    <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Profile
+                </a>
+           </nav>
+
+            <div class="mt-auto pt-6 border-t border-gray-800">
+<div class="flex items-center">
+    @if($user->profile_picture)
+        <img src="{{ asset('storage/' . $user->profile_picture) }}"
+             alt="Profile Picture"
+             class="h-10 w-10 rounded-full object-cover" />
+    @else
+        <div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold">
+            Dr
+        </div>
+    @endif
+
+    <div class="ml-3">
+        <div class="font-medium">Dr. {{ $user->name }}</div>
+        <div class="text-sm text-gray-400">Doctor</div>
+    </div>
+</div>
+
+               <form action="{{ route('logout') }}" method="POST" class="mt-4">
+                    @csrf
+                    <button type="submit" class="w-full btn-teal py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold">My Profile</h1>
+                        <p class="text-gray-400 mt-1">{{ \Carbon\Carbon::now()->format('l, F j, Y') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            @if(session('success'))
+                <div class="bg-green-500 bg-opacity-20 border border-green-500 text-green-400 px-4 py-3 rounded-lg mb-6">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {{ session('success') }}
+                    </div>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="bg-red-500 bg-opacity-20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-6">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>There are some errors with your submission</span>
+                    </div>
+                    <ul class="list-disc list-inside mt-2 text-sm">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- Profile Form -->
+            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Left Column - Profile Picture -->
+                    <div class="lg:w-1/3">
+                        <div class="card p-6">
+                            <div class="flex flex-col items-center">
+                                <div class="profile-pic-wrapper mb-6">
+                                    @if($user->profile_picture)
+                                        <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="Profile Picture" class="profile-pic">
+                                    @else
+                                        <div class="profile-pic flex items-center justify-center bg-gray-700 text-white text-5xl font-bold">
+                                            {{ substr($user->name, 0, 2) }}
+                                        </div>
+                                    @endif
+                                    <div class="profile-pic-overlay">
+                                        <label for="profile_picture" class="cursor-pointer text-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <span class="text-sm">Change Photo</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="file" id="profile_picture" name="profile_picture" class="hidden" accept="image/*">
+                                <h3 class="text-lg font-semibold">{{ $user->name }}</h3>
+                                <p class="text-gray-400">{{ $user->email }}</p>
+
+                                <div class="w-full mt-6">
+                                    <div class="section-title">Account Status</div>
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-gray-400">Member since</span>
+                                        <span>{{ $user->created_at->format('M d, Y') }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-gray-400">Last updated</span>
+                                        <span>{{ $user->updated_at->format('M d, Y') }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-gray-400">Account type</span>
+                                        <span class="px-3 py-1 rounded-full bg-teal-900 bg-opacity-30 text-teal-400 text-xs">
+                                            {{ $user->isPatient() ? 'Patient' : 'Doctor' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-8 w-full">
+                                    <div class="section-title">Delete Account</div>
+                                    <p class="text-gray-400 text-sm mb-4">
+                                        Once you delete your account, there is no going back. Please be certain.
+                                    </p>
+                                    <button type="button" id="deleteAccountBtn" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Profile Tabs -->
+
+                    <div class="lg:w-2/3">
+                        <div class="mb-6">
+<div class="flex">
+    <button type="button" class="tab-button active" data-tab="personal">Personal Information</button>
+    <button type="button" class="tab-button" data-tab="security">Security</button>
+    @if($user->isDoctor())
+    <button type="button" class="tab-button" data-tab="professional">Professional Information</button>
+    @endif
+</div>
+
+                            <!-- Personal Information Tab -->
+                            <div class="tab-content active" id="personal-tab">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="name" class="block text-gray-400 mb-2">Full Name</label>
+                                        <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" class="w-full px-4 py-2 rounded-lg input-field">
+                                    </div>
+                                    <div>
+                                        <label for="email" class="block text-gray-400 mb-2">Email Address</label>
+                                        <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" class="w-full px-4 py-2 rounded-lg input-field">
+                                    </div>
+                                    <div>
+                                        <label for="phone" class="block text-gray-400 mb-2">Phone Number</label>
+                                        <input type="tel" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" class="w-full px-4 py-2 rounded-lg input-field">
+                                    </div>
+                                    <div>
+                                        <label for="date_of_birth" class="block text-gray-400 mb-2">Date of Birth</label>
+
+<input
+    type="date"
+    id="date_of_birth"
+    name="date_of_birth"
+    value="{{ old('date_of_birth', \Carbon\Carbon::parse($profile->date_of_birth)->format('Y-m-d')) }}"
+    class="w-full px-4 py-2 rounded-lg input-field" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Security Tab -->
+                            <div class="tab-content" id="security-tab">
+                                <div class="mb-6">
+                                    <div class="section-title">Change Password</div>
+                                    <p class="text-gray-400 text-sm mb-4">
+                                        To change your password, please enter your current password first.
+                                    </p>
+                                </div>
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label for="current_password" class="block text-gray-400 mb-2">Current Password</label>
+                                        <input type="password" id="current_password" name="current_password" class="w-full px-4 py-2 rounded-lg input-field">
+                                        @error('current_password')
+                                            <p class="mt-1 text-red-500 text-sm">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label for="password" class="block text-gray-400 mb-2">New Password</label>
+                                        <input type="password" id="password" name="password" class="w-full px-4 py-2 rounded-lg input-field">
+                                        @error('password')
+                                            <p class="mt-1 text-red-500 text-sm">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label for="password_confirmation" class="block text-gray-400 mb-2">Confirm New Password</label>
+                                        <input type="password" id="password_confirmation" name="password_confirmation" class="w-full px-4 py-2 rounded-lg input-field">
+                                    </div>
+                                </div>
+</div>
+ <!-- Professional Information Tab (Doctors Only) -->
+@if($user->isDoctor())
+<div class="tab-content" id="professional-tab">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div>
+    <label for="specialty" class="block text-gray-400 mb-2">Specialty</label>
+    <select id="specialty" name="specialty" class="w-full px-4 py-2 rounded-lg input-field">
+        <option value="">Select Specialty</option>
+        <option value="Cardiology" {{ old('specialty', $user->doctor->specialty) == 'Cardiology' ? 'selected' : '' }}>Cardiology</option>
+        <option value="Dermatology" {{ old('specialty', $user->doctor->specialty) == 'Dermatology' ? 'selected' : '' }}>Dermatology</option>
+        <option value="Endocrinology" {{ old('specialty', $user->doctor->specialty) == 'Endocrinology' ? 'selected' : '' }}>Endocrinology</option>
+        <option value="Family Medicine" {{ old('specialty', $user->doctor->specialty) == 'Family Medicine' ? 'selected' : '' }}>Family Medicine</option>
+        <option value="Gastroenterology" {{ old('specialty', $user->doctor->specialty) == 'Gastroenterology' ? 'selected' : '' }}>Gastroenterology</option>
+        <option value="Hematology" {{ old('specialty', $user->doctor->specialty) == 'Hematology' ? 'selected' : '' }}>Hematology</option>
+        <option value="Internal Medicine" {{ old('specialty', $user->doctor->specialty) == 'Internal Medicine' ? 'selected' : '' }}>Internal Medicine</option>
+        <option value="Neurology" {{ old('specialty', $user->doctor->specialty) == 'Neurology' ? 'selected' : '' }}>Neurology</option>
+        <option value="Obstetrics and Gynecology" {{ old('specialty', $user->doctor->specialty) == 'Obstetrics and Gynecology' ? 'selected' : '' }}>Obstetrics & Gynecology</option>
+        <option value="Oncology" {{ old('specialty', $user->doctor->specialty) == 'Oncology' ? 'selected' : '' }}>Oncology</option>
+        <option value="Ophthalmology" {{ old('specialty', $user->doctor->specialty) == 'Ophthalmology' ? 'selected' : '' }}>Ophthalmology</option>
+        <option value="Orthopedics" {{ old('specialty', $user->doctor->specialty) == 'Orthopedics' ? 'selected' : '' }}>Orthopedics</option>
+        <option value="Otolaryngology" {{ old('specialty', $user->doctor->specialty) == 'Otolaryngology' ? 'selected' : '' }}>Otolaryngology (ENT)</option>
+        <option value="Pediatrics" {{ old('specialty', $user->doctor->specialty) == 'Pediatrics' ? 'selected' : '' }}>Pediatrics</option>
+        <option value="Psychiatry" {{ old('specialty', $user->doctor->specialty) == 'Psychiatry' ? 'selected' : '' }}>Psychiatry</option>
+        <option value="Pulmonology" {{ old('specialty', $user->doctor->specialty) == 'Pulmonology' ? 'selected' : '' }}>Pulmonology</option>
+        <option value="Rheumatology" {{ old('specialty', $user->doctor->specialty) == 'Rheumatology' ? 'selected' : '' }}>Rheumatology</option>
+        <option value="Urology" {{ old('specialty', $user->doctor->specialty) == 'Urology' ? 'selected' : '' }}>Urology</option>
+    </select>
+</div>
+       <div>
+            <label for="fee" class="block text-gray-400 mb-2">Consultation Fee (DZD)</label>
+            <input type="number" id="fee" name="fee"
+                   value="{{ old('fee', $user->doctor->fee) }}"
+                   class="w-full px-4 py-2 rounded-lg input-field">
+        </div>
+
+    </div>
+
+</div>
+@endif
+                    </div>
+
+                        <div class="flex justify-end gap-4 mt-6">
+                            <a href="{{ route('doctor.dashboard') }}" class="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">Cancel</a>
+                            <button type="submit" class="px-6 py-2 rounded-lg btn-teal">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Footer -->
+            <footer class="py-12 mt-16 border-t border-gray-800">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-6 md:mb-0">
+                        <a href="{{ route('home') }}" class="flex items-center">
+                            <span class="med-teal text-2xl font-bold logo-pulse">MED</span><span class="text-2xl font-bold text-white">Book</span>
+                        </a>
+                        <p class="text-gray-400 mt-2">Your health, our priority</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">Contact</a>
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">About us</a>
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">Privacy Policy</a>
+                    </div>
+                </div>
+                <div class="text-center mt-8 text-gray-500 text-sm">
+                    © 2025 MEDBook. All rights reserved.
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="deleteAccountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold text-red-500 mb-4">Delete Account</h3>
+            <p class="text-gray-300 mb-6">Are you sure you want to delete your account? This action cannot be undone, and all your data will be permanently removed.</p>
+            <form action="{{ route('profile.delete') }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="mb-4">
+
+<label for="password" class="block text-gray-400 mb-2">Enter your password to confirm</label>
+<input type="password" id="passwordInput" name="password" class="w-full px-4 py-2 rounded-lg input-field" required>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancelDeleteBtn" class="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">Cancel</button>
+                    <button type="submit" id="confirmDeleteBtn" class="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors" disabled>Delete Permanently</button>
+                </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab Switching
+        const tabButtons = document.querySelectorAll('[data-tab]');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+
+                // Remove active class from all buttons and tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                // Add active class to clicked button and corresponding tab
+                button.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // Delete Account Modal
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+        const deleteAccountModal = document.getElementById('deleteAccountModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const confirmationInput = document.getElementById('confirmation');
+ const passwordInput = document.getElementById('passwordInput');
+
+        deleteAccountBtn.addEventListener('click', () => {
+            deleteAccountModal.classList.remove('hidden');
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteAccountModal.classList.add('hidden');
+            confirmationInput.value = '';
+            confirmDeleteBtn.disabled = true;
+        });
+
+passwordInput.addEventListener('input', () => {
+    confirmDeleteBtn.disabled = passwordInput.value.length < 6; // or whatever min password length
+});
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === deleteAccountModal) {
+                deleteAccountModal.classList.add('hidden');
+                confirmationInput.value = '';
+                confirmDeleteBtn.disabled = true;
+            }
+        });
+
+        // Profile Picture Preview
+        const profilePicInput = document.getElementById('profile_picture');
+        const profilePic = document.querySelector('.profile-pic');
+        const profilePicInitials = document.querySelector('.profile-pic-wrapper .profile-pic:not(img)');
+
+        profilePicInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (profilePicInitials) {
+                        profilePicInitials.remove();
+                    }
+                    if (profilePic) {
+                        profilePic.src = e.target.result;
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.classList.add('profile-pic');
+                        document.querySelector('.profile-pic-wrapper').prepend(img);
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
