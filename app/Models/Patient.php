@@ -44,6 +44,7 @@ public function reviews()
 }
 public function favoriteDoctors()
 {
-    return $this->belongsToMany(Doctor::class, 'favorites');
+    return $this->belongsToMany(User::class, 'favorites', 'patient_id', 'doctor_id')
+                ->where('role', 'doctor');
 }
 }

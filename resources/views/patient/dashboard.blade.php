@@ -156,7 +156,7 @@
                     </svg>
                     My Appointments
                 </a>
-<a href="#favorites" class="sidebar-link">
+<a href="{{route('patient.favorites')}}" class="sidebar-link">
                     <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
@@ -225,12 +225,7 @@
                         <h1 class="text-3xl font-bold">Hello, {{$patient->name}}</h1>
                         <p class="text-gray-400 mt-1">{{ \Carbon\Carbon::now()->format('l, F j, Y') }} • Setif, Algeria</p>
                     </div>
-                    <button class="btn-teal px-5 py-2 rounded-lg text-sm font-medium flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Book New
-                    </button>
+
                 </div>
             </div>
 
@@ -314,7 +309,7 @@
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-center mb-6" id="appointments">
                         <h2 class="text-xl font-bold">Upcoming appointments</h2>
-                        <a href="#" class="btn-teal px-4 py-2 rounded-lg text-sm font-medium">Book New</a>
+                        <a href="{{route('patient.explore')}}" class="btn-teal px-4 py-2 rounded-lg text-sm font-medium">Book New</a>
                     </div>
 
                     @if($appointments->isEmpty())
@@ -379,30 +374,43 @@
 
                 </div>
 
-                <!-- Right Column: Favorites -->
-                <div id="favorites">
-                    <h2 class="text-xl font-bold mb-6">Favorite Doctors</h2>
-                    <!-- Sample favorite doctors - in a real app this would be pulled from user's favorites -->
-                    <div class="card p-6 mb-6">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold mr-4">
-                                    M
-                                </div>
-                                <div>
-                                    <h5 class="font-semibold">Dr. Mohammed</h5>
-                                    <p class="text-sm text-gray-400">General Doctor</p>
-                                </div>
-                            </div>
-                            <a href="{{ route('patient.doctor.profile', 1) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        </div>
+<!-- Right Column: Favorites -->
+<div id="favorites">
+    <h2 class="text-xl font-bold mb-6">Favorite Doctors</h2>
+
+    @forelse($favoriteDoctors as $doctor)
+        <div class="card p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <!-- Display the doctor's initial or image if available -->
+                    <div class="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold mr-4">
+                        @if($doctor->profile_picture)
+                            <img src="{{ asset('storage/' . $doctor->profile_picture) }}" class="h-12 w-12 rounded-full object-cover" alt="{{ $doctor->name }}">
+                        @else
+                            {{ strtoupper($doctor->name[0]) }} <!-- Initial if no picture available -->
+                        @endif
+                    </div>
+
+                    <div>
+                        <h5 class="font-semibold">{{ $doctor->name }}</h5>
+                        <p class="text-sm text-gray-400">
+                            {{ optional($doctor->doctorProfile)->specialty ?? 'Specialty not available' }}
+                        </p>
                     </div>
                 </div>
+
+                <!-- Link to doctor's profile -->
+                <a href="{{ route('patient.doctor.profile', $doctor->id) }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </a>
             </div>
+        </div>
+    @empty
+        <p>No favorite doctors added yet.</p>
+    @endforelse
+</div>
 
             <!-- Footer -->
             <footer class="py-12 mt-16 border-t border-gray-800">

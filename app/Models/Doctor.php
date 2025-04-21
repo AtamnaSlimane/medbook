@@ -45,10 +45,7 @@ public function reviewsCount()
     return $this->reviews()->count();
 }
 
-public function favoritedBy()
-{
-    return $this->belongsToMany(Patient::class, 'favorites');
-}
+
 
 // Add these methods to your Patient model
 
@@ -60,6 +57,10 @@ public function favoriteDoctors()
     return $this->belongsToMany(Doctor::class, 'favorites', 'patient_id', 'doctor_id')
                 ->withTimestamps();
 }
+public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'doctor_favorites', 'doctor_id', 'user_id');
+    }
 public function getIsFavoritedAttribute()
 {
     if (!auth()->check()) return false;

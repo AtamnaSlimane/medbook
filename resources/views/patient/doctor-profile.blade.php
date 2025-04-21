@@ -182,7 +182,7 @@
                     <i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
                     My Appointments
                 </a>
-                <a href="#favorites" class="sidebar-link">
+                <a href="{{route('patient.appointments')}}" class="sidebar-link">
                     <i class="fas fa-heart w-5 h-5 mr-3"></i>
                     My Favorites
                 </a>

@@ -7,6 +7,12 @@
     <title>MEDBook - Explore Doctors</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/alpinejs" defer></script>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -427,7 +433,7 @@
                     </svg>
                     My Appointments
                 </a>
-                <a href="#favorites" class="sidebar-link">
+                <a href="{{route('patient.favorites')}}" class="sidebar-link">
                     <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
@@ -540,13 +546,7 @@
         </div>
     </div>
 
-    <!-- My Doctors -->
-    <div class="bg-gray-900 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow stat-card">
-        <div class="text-gray-400 text-sm mb-2">My Doctors</div>
-        <div class="flex justify-between items-end">
-            <div class="text-3xl font-extrabold text-white">{{ $doctorscount }}</div>
-        </div>
-    </div>
+
 
 </div>
     <!-- Search and Filter Controls -->
@@ -722,6 +722,7 @@
 
     <div class="mb-12">
         <div class="doctor-list flex flex-col gap-6">
+
             @foreach($doctors as $doctor)
             <div class="doctor-card group hover:border-teal-400/30" data-specialties="{{ strtolower($doctor->specialties) }}">
                 <div class="p-6">
@@ -784,13 +785,15 @@
                             </div>
 
 <div class="flex gap-2">
-    <form action="{{ route('favorites.toggle', ['doctorId' => $doctor->id]) }}" method="POST">
+    <form action="{{ route('patient.explore') }}" method="POST">
         @csrf
+        <input type="hidden" name="doctorId" value="{{ $doctor->id }}">
         <button type="submit" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 hover:border-teal-400 flex items-center justify-center transition-all" title="Add to favorites">
-            <i class="far fa-heart text-teal-400"></i>
+            <i class="{{ in_array($doctor->id, $favoriteDoctorIds) ? 'fas fa-star text-yellow-500' : 'far fa-star text-teal-400' }}"></i>
         </button>
     </form>
 </div>
+
                        </div>
                     </div>
 
@@ -828,6 +831,7 @@
                                     <label for="appointment_date_{{ $doctor->id }}" class="block text-sm mb-2 text-gray-300 font-medium">
                                         <i class="fas fa-calendar-alt text-teal-400 mr-2"></i> Select Date:
                                     </label>
+
                                     <input type="date"
                                         id="appointment_date_{{ $doctor->id }}"
                                         name="appointment_date"
@@ -1008,7 +1012,25 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('order', order);
         window.location.href = url.toString();
     }
-
+ flatpickr(".flatpickr", {
+            minDate: "today",
+            disable: [
+                function(date) {
+                    // return true to disable
+                    return date.getDay() === 5; // Disable Fridays
+                }
+            ],
+            dateFormat: "Y-m-d",
+        });
+ document.querySelectorAll('input[type="date"]').forEach(function (input) {
+            input.addEventListener('input', function () {
+                const selectedDate = new Date(this.value);
+                if (selectedDate.getDay() === 5) { // 5 = Friday
+                    alert("Appointments cannot be booked on Fridays. Please select another day.");
+                    this.value = ""; // Clear the invalid date
+                }
+            });
+        });
     // Form submission handler
     async function handleFormSubmit(e) {
         e.preventDefault();

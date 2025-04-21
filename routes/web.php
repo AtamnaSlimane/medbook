@@ -11,6 +11,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\EmailController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\AppointmentAcceptedMail;
 use App\Models\Appointment;
 // Home route
 Route::view('/', 'home')->name('home');
@@ -42,7 +43,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/patient/doctor/{id}', [PatientController::class, 'showDoctorProfile'])->name('patient.doctor.profile');
 
         Route::get('/patient/appointments', [PatientController::class, 'appointments'])->name('patient.appointments');
-        Route::get('/patient/explore', [PatientController::class, 'explore'])->name('patient.explore');
     });
 
     // Doctor Routes
@@ -81,17 +81,10 @@ Route::get('/force-login/{id}', function($id) {
     auth()->loginUsingId($id);
     return redirect('/session-check');
 });
-Route::get('/test-email', function() {
-    try {
-        \Mail::raw('Test email content', function($message) {
-            $message->to('unknownpastafield@gmail.com')
-                    ->subject('Test Email');
-        });
-        return 'Email sent successfully!';
-    } catch (\Exception $e) {
-        \Log::error('Email send error: ' . $e->getMessage());
-        return 'Error: ' . $e->getMessage();
-    }
+Route::get('/test-mail', function () {
+    Mail::to('atamnamohamedslimane@gmail.com')->send(new AppointmentAcceptedMail(
+        'John Doe', 'Dr. Smith', '2025-04-23 15:00', 30
+    ));
 });
 Route::get('/test-notification', function() {
     $appointment = Appointment::first();
@@ -128,10 +121,9 @@ Route::get('/reviews/{doctorId}', 'App\Http\Controllers\ReviewController@index')
 Route::delete('/reviews/{doctorId}/{reviewId}', 'App\Http\Controllers\ReviewController@destroy')->name('reviews.destroy');
 
 // Favorites Routes
-
-Route::post('/favorites/{doctorId}', [FavoriteController::class, 'toggle'])
-     ->name('favorites.toggle')
-     ->middleware('auth');
+Route::get('/patient/favorites', [FavoriteController::class,'favorites'])->name('patient.favorites');
+Route::post('/patient/favorite/{doctor}', [FavoriteController::class, 'toggleFavorite'])->name('patient.toggleFavorite');
+Route::match(['get', 'post'], '/patient/explore', [PatientController::class, 'explore'])->name('patient.explore');
 Route::get('/test-success', function () {
     return redirect()->back()->with('success', 'Test success message!');
 });

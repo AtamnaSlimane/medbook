@@ -12,11 +12,16 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Contracts\Auth\Factory;
 class PatientController extends Controller
 {
+
+
 public function dashboard()
 {
+    $user=Auth::user();
     $userId=Auth::id();
     // Fetch all doctors
 $patient=Auth::user();
+
+    $patientt = \App\Models\Patient::where('user_id', $user->id)->firstOrFail();
     // Fetch all appointments for the logged-in patient
     $appointments = Auth::user()->appointmentsAsPatient()
         ->with('doctor') // Load doctor details
@@ -30,11 +35,13 @@ $sort = request()->get('sort', 'name');
             $query->orderBy($sort, $order);
         })
         ->get();
+ $favoriteDoctors = $patientt->favoriteDoctors()->with('doctorProfile')->get();
    $totalAppointments = Appointment::where('patient_id', $userId)->count();
     $pendingAppointments = Appointment::where('patient_id', $userId)->where('status', 'pending')->count();
     $completedAppointments = Appointment::where('patient_id', $userId)->where('status', 'completed')->count();
     $canceledAppointments = Appointment::where('patient_id', $userId)->where('status', 'canceled')->count();
 $upcomingAppointments = Appointment::where('patient_id', $userId)
+    ->whereIN('status',['booked','pending'])
     ->where('appointment_date', '>=', now())
     ->orderBy('appointment_date')
     ->paginate(5);
@@ -46,7 +53,7 @@ $lastAppointment = Appointment::where('patient_id', $userId)
     // Debugging output
     //dd($appointments); // This will stop execution and show appointments data
 
-    return view('patient.dashboard', compact('doctors', 'appointments','patient','totalAppointments','pendingAppointments','completedAppointments','canceledAppointments','sort','order','lastAppointment','confirmedUpcoming','totalUpcoming','upcomingAppointments'));
+    return view('patient.dashboard', compact('doctors','favoriteDoctors', 'appointments','patient','totalAppointments','pendingAppointments','completedAppointments','canceledAppointments','sort','order','lastAppointment','confirmedUpcoming','totalUpcoming','upcomingAppointments'));
 }
 
 public function appointments(Request $request)
@@ -196,7 +203,9 @@ public function cancel(Appointment $appointment)
 public function showDoctorProfile($id)
 {
     $patient = Auth::user();
-    $appointments = Appointment::where('doctor_id', $id)->latest()->paginate(10);
+    $appointments = Appointment::where('doctor_id', $id)
+        ->where('patient_id', $patient->id)
+        ->latest()->paginate(10);
 
     $doctor = Doctor::where('user_id', $id)->firstOrFail();
 
@@ -243,7 +252,226 @@ public function getAvailableTimes(User $doctor, Request $request)
 
     return response()->json($slots);
 }
+
 public function explore(Request $request)
+{
+    $user = auth()->user();
+
+    // Get the patient related to this user
+    $patient = \App\Models\Patient::where('user_id', $user->id)->first();
+
+    if (!$patient) {
+        return back()->with('error', 'Patient not found for the current user.');
+    }
+
+    // If the form was submitted to toggle favorite
+    if ($request->isMethod('post') && $request->has('doctorId')) {
+        $doctorId = $request->get('doctorId');
+$doctorUser = \App\Models\User::where('id', $doctorId)->where('role', 'doctor')->firstOrFail();
+$doctor = $doctorUser->doctorProfile;
+        // Check if the doctor is already a favorite
+        $favorite = $patient->favoriteDoctors()->where('doctor_id', $doctorId)->exists();
+
+        // Toggle favorite (add/remove)
+        if ($favorite) {
+            // Remove from favorites
+            $patient->favoriteDoctors()->detach($doctorId);
+        } else {
+            // Add to favorites
+            $patient->favoriteDoctors()->attach($doctorId);
+        }
+
+        // Redirect back to the explore page
+        return redirect()->route('patient.explore')->with('success', 'Favorite updated successfully.');
+    }
+
+    $specialtyFilter = $request->get('specialty', 'all');
+    $sort = $request->get('sort', 'name');
+    $order = $request->get('order', 'asc');
+    $search = $request->get('search');
+
+    // Base query for doctors with eager loading
+    $doctorsQuery = User::where('role', 'doctor')
+        ->with(['doctorProfile'])
+        ->whereHas('doctorProfile');
+
+    // Apply search filter
+    if ($search) {
+        $doctorsQuery->where(function($query) use ($search) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('doctorProfile', function($q) use ($search) {
+                      $q->where('specialty', 'LIKE', "%{$search}%");
+                  });
+        });
+    }
+
+    // Apply specialty filter
+    if ($specialtyFilter !== 'all') {
+        $doctorsQuery->whereHas('doctorProfile', function($q) use ($specialtyFilter) {
+            $q->where('specialty', 'LIKE', "%{$specialtyFilter}%");
+        });
+    }
+
+    // Apply sorting
+    switch ($sort) {
+        case 'name':
+            $doctorsQuery->orderBy('name', $order);
+            break;
+
+        case 'experience':
+            $doctorsQuery->orderBy(
+                DoctorProfile::select('experience')
+                    ->whereColumn('doctor_profiles.user_id', 'users.id'),
+                $order
+            );
+            break;
+
+        case 'rating':
+            $doctorsQuery->orderBy(
+                DoctorProfile::select('rating')
+                    ->whereColumn('doctor_profiles.user_id', 'users.id'),
+                $order
+            );
+            break;
+    }
+
+    // Get unique specialties from doctor profiles
+    $specialties = Doctor::select('specialty')
+        ->distinct()
+        ->get()
+        ->flatMap(function($profile) {
+            return array_map('trim', explode(',', $profile->specialty));
+        })
+        ->unique()
+        ->filter()
+        ->values();
+
+    // Paginate results
+    $doctors = $doctorsQuery->paginate(10)
+        ->appends($request->query());
+
+// Count distinct doctors the patient has had appointments with
+$doctorscount = Appointment::where('patient_id', $patient->id)
+    ->whereIn('status', ['booked', 'completed'])
+    ->distinct('doctor_id')
+    ->count('doctor_id');
+
+    // Get a list of favorite doctor IDs for the logged-in patient
+    $favoriteDoctorIds = $patient->favoriteDoctors()->pluck('doctor_id')->toArray();
+
+    $alldoctors = Doctor::count();
+    return view('patient.explore', [
+        'doctors' => $doctors,
+        'user' => $user,
+        'patient' => $patient,
+        'currentSpecialty' => $specialtyFilter,
+        'sort' => $sort,
+        'doctorscount' => $doctorscount,
+        'alldoctors' => $alldoctors,
+        'order' => $order,
+        'specialties' => $specialties,
+        'search' => $search,
+        'favoriteDoctorIds' => $favoriteDoctorIds, // Pass favorite doctor IDs to the view
+    ]);
+}
+public function explore2(Request $request)
+{
+    $user = Auth::user();
+    $patient = Auth::user()->patient;
+
+    // Get request parameters
+    $specialtyFilter = $request->get('specialty', 'all');
+    $sort = $request->get('sort', 'name');
+    $order = $request->get('order', 'asc');
+    $search = $request->get('search');
+    $alldoctors = Doctor::count();
+
+    // Base query for doctors with eager loading
+    $doctorsQuery = User::where('role', 'doctor')
+        ->with(['doctorProfile'])
+        ->whereHas('doctorProfile');
+
+    // Apply search filter
+    if ($search) {
+        $doctorsQuery->where(function($query) use ($search) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('doctorProfile', function($q) use ($search) {
+                      $q->where('specialty', 'LIKE', "%{$search}%");
+                  });
+        });
+    }
+
+    // Apply specialty filter
+    if ($specialtyFilter !== 'all') {
+        $doctorsQuery->whereHas('doctorProfile', function($q) use ($specialtyFilter) {
+            $q->where('specialty', 'LIKE', "%{$specialtyFilter}%");
+        });
+    }
+
+    // Apply sorting
+    switch ($sort) {
+        case 'name':
+            $doctorsQuery->orderBy('name', $order);
+            break;
+
+        case 'experience':
+            $doctorsQuery->orderBy(
+                DoctorProfile::select('experience')
+                    ->whereColumn('doctor_profiles.user_id', 'users.id'),
+                $order
+            );
+            break;
+
+        case 'rating':
+            $doctorsQuery->orderBy(
+                DoctorProfile::select('rating')
+                    ->whereColumn('doctor_profiles.user_id', 'users.id'),
+                $order
+            );
+            break;
+    }
+
+    // Get unique specialties from doctor profiles
+    $specialties = Doctor::select('specialty')
+        ->distinct()
+        ->get()
+        ->flatMap(function($profile) {
+            return array_map('trim', explode(',', $profile->specialty));
+        })
+        ->unique()
+        ->filter()
+        ->values();
+
+    // Paginate results
+    $doctors = $doctorsQuery->paginate(10)
+        ->appends($request->query());
+
+    $doctorscount = $doctorsQuery->count();
+
+    // Check if the patient has favorited any doctor and pass the 'favorite' flag
+    $favoriteDoctors = $patient->favoriteDoctors()->pluck('doctor_id')->toArray();
+
+    // Modify each doctor to include a 'favorite' key
+    $doctors->getCollection()->transform(function($doctor) use ($favoriteDoctors) {
+        $doctor->favorite = in_array($doctor->id, $favoriteDoctors);
+        return $doctor;
+    });
+
+    return view('patient.explore', [
+        'doctors' => $doctors,
+        'user' => $user,
+        'alldoctors' => $alldoctors,
+        'patient' => $patient,
+        'currentSpecialty' => $specialtyFilter,
+        'sort' => $sort,
+        'doctorscount' => $doctorscount,
+        'alldoctors' => $alldoctors,
+        'order' => $order,
+        'specialties' => $specialties,
+        'search' => $search
+    ]);
+}
+public function explore1(Request $request)
 {
     $user=Auth::user();
     $patient = Auth::user()->patient;
@@ -328,5 +556,36 @@ $doctorscount=$doctorsQuery->count();
     ]);
 }
 
+public function showFavorites()
+{
+    $user = auth()->user();
 
+    $patient = \App\Models\Patient::where('user_id', $user->id)->first();
+
+    if (!$patient) {
+        return redirect()->route('home')->with('error', 'Patient not found.');
+    }
+
+    $favoriteDoctors = $patient->favoriteDoctors;
+
+    return view('patient.favorites', compact('favoriteDoctors',));
+}
+
+
+public function removeFavorite($doctorId)
+{
+    $user = auth()->user();
+
+    $patient = \App\Models\Patient::where('user_id', $user->id)->first();
+
+    if (!$patient) {
+        return redirect()->route('home')->with('error', 'Patient not found.');
+    }
+
+    $doctor = \App\Models\Doctor::findOrFail($doctorId);
+
+    $patient->favoriteDoctors()->detach($doctorId);
+
+    return back()->with('success', 'Doctor removed from favorites.');
+}
 }
