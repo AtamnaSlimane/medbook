@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MEDBook - My Profile</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
         body {
             background-color: #121212;
@@ -390,41 +393,44 @@
 @if($user->isDoctor())
 <div class="tab-content" id="professional-tab">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-<div>
-    <label for="specialty" class="block text-gray-400 mb-2">Specialty</label>
-    <select id="specialty" name="specialty" class="w-full px-4 py-2 rounded-lg input-field">
-        <option value="">Select Specialty</option>
-        <option value="Cardiology" {{ old('specialty', $user->doctor->specialty) == 'Cardiology' ? 'selected' : '' }}>Cardiology</option>
-        <option value="Dermatology" {{ old('specialty', $user->doctor->specialty) == 'Dermatology' ? 'selected' : '' }}>Dermatology</option>
-        <option value="Endocrinology" {{ old('specialty', $user->doctor->specialty) == 'Endocrinology' ? 'selected' : '' }}>Endocrinology</option>
-        <option value="Family Medicine" {{ old('specialty', $user->doctor->specialty) == 'Family Medicine' ? 'selected' : '' }}>Family Medicine</option>
-        <option value="Gastroenterology" {{ old('specialty', $user->doctor->specialty) == 'Gastroenterology' ? 'selected' : '' }}>Gastroenterology</option>
-        <option value="Hematology" {{ old('specialty', $user->doctor->specialty) == 'Hematology' ? 'selected' : '' }}>Hematology</option>
-        <option value="Internal Medicine" {{ old('specialty', $user->doctor->specialty) == 'Internal Medicine' ? 'selected' : '' }}>Internal Medicine</option>
-        <option value="Neurology" {{ old('specialty', $user->doctor->specialty) == 'Neurology' ? 'selected' : '' }}>Neurology</option>
-        <option value="Obstetrics and Gynecology" {{ old('specialty', $user->doctor->specialty) == 'Obstetrics and Gynecology' ? 'selected' : '' }}>Obstetrics & Gynecology</option>
-        <option value="Oncology" {{ old('specialty', $user->doctor->specialty) == 'Oncology' ? 'selected' : '' }}>Oncology</option>
-        <option value="Ophthalmology" {{ old('specialty', $user->doctor->specialty) == 'Ophthalmology' ? 'selected' : '' }}>Ophthalmology</option>
-        <option value="Orthopedics" {{ old('specialty', $user->doctor->specialty) == 'Orthopedics' ? 'selected' : '' }}>Orthopedics</option>
-        <option value="Otolaryngology" {{ old('specialty', $user->doctor->specialty) == 'Otolaryngology' ? 'selected' : '' }}>Otolaryngology (ENT)</option>
-        <option value="Pediatrics" {{ old('specialty', $user->doctor->specialty) == 'Pediatrics' ? 'selected' : '' }}>Pediatrics</option>
-        <option value="Psychiatry" {{ old('specialty', $user->doctor->specialty) == 'Psychiatry' ? 'selected' : '' }}>Psychiatry</option>
-        <option value="Pulmonology" {{ old('specialty', $user->doctor->specialty) == 'Pulmonology' ? 'selected' : '' }}>Pulmonology</option>
-        <option value="Rheumatology" {{ old('specialty', $user->doctor->specialty) == 'Rheumatology' ? 'selected' : '' }}>Rheumatology</option>
-        <option value="Urology" {{ old('specialty', $user->doctor->specialty) == 'Urology' ? 'selected' : '' }}>Urology</option>
-    </select>
-</div>
-       <div>
+        <!-- Specialty -->
+        <div>
+            <label for="specialty" class="block text-gray-400 mb-2">Specialty</label>
+            <select id="specialty" name="specialty" class="w-full px-4 py-2 rounded-lg input-field">
+                <option value="">Select Specialty</option>
+                @php $specialties = [
+                    'Cardiology', 'Dermatology', 'Endocrinology', 'Family Medicine', 'Gastroenterology', 'Hematology',
+                    'Internal Medicine', 'Neurology', 'Obstetrics and Gynecology', 'Oncology', 'Ophthalmology',
+                    'Orthopedics', 'Otolaryngology', 'Pediatrics', 'Psychiatry', 'Pulmonology', 'Rheumatology', 'Urology'
+                ]; @endphp
+                @foreach($specialties as $specialty)
+                    <option value="{{ $specialty }}" {{ old('specialty', $user->doctor->specialty) == $specialty ? 'selected' : '' }}>
+                        {{ $specialty == 'Obstetrics and Gynecology' ? 'Obstetrics & Gynecology' : $specialty }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <!-- Fee -->
+        <div>
             <label for="fee" class="block text-gray-400 mb-2">Consultation Fee (DZD)</label>
             <input type="number" id="fee" name="fee"
                    value="{{ old('fee', $user->doctor->fee) }}"
                    class="w-full px-4 py-2 rounded-lg input-field">
         </div>
 
+        <!-- Location (Map + Coordinates) -->
+        <div class="md:col-span-2">
+            <label class="block text-gray-400 mb-2">Your Clinic Location</label>
+            <div id="map" class="rounded-lg border border-gray-700" style="height: 300px;"></div>
+            <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $user->doctor->latitude) }}">
+            <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $user->doctor->longitude) }}">
+            <p class="text-sm text-gray-500 mt-2">Drag the marker or click on the map to set your clinic location.</p>
+        </div>
     </div>
-
 </div>
 @endif
+
                     </div>
 
                         <div class="flex justify-end gap-4 mt-6">
@@ -474,8 +480,39 @@
                     <button type="button" id="cancelDeleteBtn" class="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors">Cancel</button>
                     <button type="submit" id="confirmDeleteBtn" class="px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors" disabled>Delete Permanently</button>
                 </div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    let map; // Declare globally
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const lat = {{ old('latitude', $user->doctor->latitude ?? 36.19) }};
+        const lng = {{ old('longitude', $user->doctor->longitude ?? 5.41) }};
+
+        map = L.map('map').setView([lat, lng], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+        function setCoordinates(lat, lng) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+        }
+
+        setCoordinates(lat, lng);
+
+        marker.on('dragend', function (e) {
+            const position = marker.getLatLng();
+            setCoordinates(position.lat, position.lng);
+        });
+
+        map.on('click', function (e) {
+            marker.setLatLng(e.latlng);
+            setCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
         // Tab Switching
         const tabButtons = document.querySelectorAll('[data-tab]');
         tabButtons.forEach(button => {
@@ -490,7 +527,15 @@
 
                 // Add active class to clicked button and corresponding tab
                 button.classList.add('active');
-                document.getElementById(`${tabId}-tab`).classList.add('active');
+                const tab = document.getElementById(`${tabId}-tab`);
+                tab.classList.add('active');
+
+                // Fix Leaflet map size if switching to the map tab
+                if (tabId === 'professional') {
+                    setTimeout(() => {
+                        map.invalidateSize();
+                    }, 300); // Delay to allow DOM to update
+                }
             });
         });
 
@@ -500,7 +545,7 @@
         const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
         const confirmationInput = document.getElementById('confirmation');
- const passwordInput = document.getElementById('passwordInput');
+        const passwordInput = document.getElementById('passwordInput');
 
         deleteAccountBtn.addEventListener('click', () => {
             deleteAccountModal.classList.remove('hidden');
@@ -512,9 +557,10 @@
             confirmDeleteBtn.disabled = true;
         });
 
-passwordInput.addEventListener('input', () => {
-    confirmDeleteBtn.disabled = passwordInput.value.length < 6; // or whatever min password length
-});
+        passwordInput.addEventListener('input', () => {
+            confirmDeleteBtn.disabled = passwordInput.value.length < 6;
+        });
+
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
             if (e.target === deleteAccountModal) {
@@ -529,11 +575,11 @@ passwordInput.addEventListener('input', () => {
         const profilePic = document.querySelector('.profile-pic');
         const profilePicInitials = document.querySelector('.profile-pic-wrapper .profile-pic:not(img)');
 
-        profilePicInput.addEventListener('change', function(e) {
+        profilePicInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     if (profilePicInitials) {
                         profilePicInitials.remove();
                     }
@@ -545,9 +591,10 @@ passwordInput.addEventListener('input', () => {
                         img.classList.add('profile-pic');
                         document.querySelector('.profile-pic-wrapper').prepend(img);
                     }
-                }
+                };
                 reader.readAsDataURL(file);
             }
         });
     });
 </script>
+

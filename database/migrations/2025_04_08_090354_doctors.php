@@ -17,6 +17,8 @@ return new class extends Migration
     $table->string('specialty')->nullable();
     $table->date('date_of_birth')->nullable();
     $table->integer('fee')->nullable();
+    $table->decimal('latitude', 10, 7)->nullable();
+    $table->decimal('longitude', 10, 7)->nullable();
     $table->timestamps();
 });
     }

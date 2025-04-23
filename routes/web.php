@@ -127,3 +127,4 @@ Route::match(['get', 'post'], '/patient/explore', [PatientController::class, 'ex
 Route::get('/test-success', function () {
     return redirect()->back()->with('success', 'Test success message!');
 });
+Route::get('/patient/map', [PatientController::class, 'mapview'])->name('patient.map');

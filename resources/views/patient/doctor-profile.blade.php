@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MEDBook - Doctor Profile</title>
+    <script src="https://unpkg.com/alpinejs" defer></script>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-:root {
+        :root {
             --med-teal: #00CCCC;
             --med-teal-hover: #00B3B3;
             --med-teal-light: rgba(0, 204, 204, 0.15);
@@ -48,7 +57,7 @@
             box-shadow: 0 15px 40px rgba(0, 204, 204, 0.15);
             transform: translateY(-5px);
         }
-/* Sidebar */
+        /* Sidebar */
         .sidebar {
             background-color: var(--sidebar-bg);
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
@@ -160,12 +169,83 @@
                 text-shadow: 0 0 5px rgba(0, 204, 204, 0.5);
             }
         }
+
+        /* New styling for time slots */
+        .time-slot {
+            background-color: rgba(40, 40, 40, 0.7);
+            border: 1px solid rgba(0, 204, 204, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .time-slot:hover {
+            background-color: rgba(0, 204, 204, 0.2);
+        }
+
+        .time-slot.selected {
+            background-color: var(--med-teal);
+            color: white;
+        }
+
+        /* Booking form transition */
+        .booking-form {
+            max-height: 0;
+            transition: max-height 0.5s ease-in-out;
+            overflow: hidden;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Toggle button active state */
+        .toggle-booking-btn.active {
+            background-color: var(--med-teal-hover);
+        }
+
+        /* Animation for notification */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Input field styling */
+        .input-field {
+            background-color: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .input-field:focus {
+            border-color: var(--med-teal);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 204, 204, 0.2);
+        }
     </style>
 </head>
 
 <body>
     <div class="flex min-h-screen">
-<!-- Sidebar -->
+        <!-- Sidebar -->
         <div class="sidebar w-64 p-6 flex flex-col">
             <div class="mb-10">
                 <a href="{{ route('home') }}" class="flex items-center">
@@ -292,8 +372,7 @@
                                     </span>
                                 </div>
                             </div>
-
-                                                    </div>
+                        </div>
                     </div>
                 </div>
 
@@ -303,62 +382,122 @@
                         <div class="flex">
                             <button type="button" class="tab-button active" data-tab="appointments">Appointment History</button>
                         </div>
+                        <div class="mt-6 flex flex-col md:flex-row md:items-center justify-between">
+                            <button type="button" id="toggle-booking-btn" class="toggle-booking-btn btn-teal px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 transition-all hover:scale-105">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Book Appointment</span>
+                                <i class="fas fa-chevron-down toggle-chevron ml-1"></i>
+                            </button>
+                        </div>
 
-<!-- Appointment History Tab -->
-<div class="tab-content active" id="appointments-tab">
-    @if($appointments->count() > 0)
-        <div class="overflow-x-auto bg-black rounded-lg shadow-md">
-            <table class="w-full text-sm text-white">
-                <thead>
-                    <tr class="text-left bg-gray-900 border-b border-gray-700">
-                        <th class="py-3 pl-4">Date</th>
-                        <th class="py-3 px-6">Time</th>
-                        <th class="py-3 px-6">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($appointments as $appointment)
-                        <tr class="border-b border-gray-800 hover:bg-gray-800 transition-colors">
-                            <td class="py-4 pl-4">{{ $appointment->appointment_date->format('M d, Y') }}</td>
-                            <td class="px-6">{{ $appointment->appointment_date->format('h:i A') }}</td>
-                            <td class="px-6">
-                                @if($appointment->status == 'completed')
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">
-                                        Completed
-                                    </span>
-                                @elseif($appointment->status == 'booked')
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
-                                        Booked
-                                    </span>
-                                @elseif($appointment->status == 'canceled')
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">
-                                        Cancelled
-                                    </span>
-                                @else
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-purple-600 text-white rounded-full">
-                                        ℹ️ {{ ucfirst($appointment->status) }}
-                                    </span>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-6 text-center">
-            {{ $appointments->links() }}
-        </div>
-    @else
-        <div class="text-center py-10 bg-gray-900 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h3 class="text-xl font-semibold text-white">No appointments yet</h3>
-            <p class="text-gray-500 mt-2">This patient hasn't had any appointments with you yet.</p>
-        </div>
-    @endif
-</div>
+                        <!-- Booking Form -->
+                        <div id="booking-form" class="booking-form mt-6 border-t border-gray-700 pt-6 overflow-hidden transition-all duration-500 ease-in-out">
+                            <form action="{{ route('appointments.book') }}" method="POST" class="appointment-form p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                                @csrf
+                                <input type="hidden" name="doctor_id" value="{{ $doctor->user->id }}" data-doctor-id="{{ $doctor->user->id }}">
 
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="appointment_date_{{ $doctor->id }}" class="block text-sm mb-2 text-gray-300 font-medium">
+                                            <i class="fas fa-calendar-alt text-teal-400 mr-2"></i> Select Date:
+                                        </label>
+
+                                        <input type="date"
+                                            id="appointment_date_{{ $doctor->user->id }}"
+                                            name="appointment_date"
+                                            class="w-full px-4 py-3 rounded-lg input-field bg-gray-900 border border-gray-700 focus:border-teal-400 focus:ring focus:ring-teal-400/20"
+                                            required
+                                            min="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <label class="block text-sm mb-2 text-gray-300 font-medium">
+                                        <i class="fas fa-clock text-teal-400 mr-2"></i> Available Time Slots:
+                                    </label>
+                                    <div class="time-slots grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-2">
+                                        <!-- Time slots will be dynamically loaded here -->
+                                    </div>
+                                    <div class="error-message mt-2 text-red-500"></div>
+                                    <input type="hidden" name="appointment_time" value="">
+                                </div>
+
+                                <div class="mt-6">
+                                    <label for="appointment_notes_{{ $doctor->id }}" class="block text-sm mb-2 text-gray-300 font-medium">
+                                        <i class="fas fa-comment-medical text-teal-400 mr-2"></i> Notes (Optional):
+                                    </label>
+                                    <textarea
+                                        id="appointment_notes_{{ $doctor->id }}"
+                                        name="notes"
+                                        rows="2"
+                                        class="w-full px-4 py-3 rounded-lg input-field bg-gray-900 border border-gray-700 focus:border-teal-400 focus:ring focus:ring-teal-400/20"
+                                        placeholder="Any specific concerns or information you'd like the doctor to know"></textarea>
+                                </div>
+
+                                <button type="submit" class="w-full btn-teal py-3 rounded-lg font-medium flex items-center justify-center mt-6">
+                                    <i class="fas fa-calendar-check mr-2"></i>
+                                    Confirm Appointment
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Appointment History Tab -->
+                    <div class="tab-content active" id="appointments-tab">
+                        @if($appointments->count() > 0)
+                            <div class="overflow-x-auto bg-black rounded-lg shadow-md">
+                                <table class="w-full text-sm text-white">
+                                    <thead>
+                                        <tr class="text-left bg-gray-900 border-b border-gray-700">
+                                            <th class="py-3 pl-4">Date</th>
+                                            <th class="py-3 px-6">Time</th>
+                                            <th class="py-3 px-6">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($appointments as $appointment)
+                                            <tr class="border-b border-gray-800 hover:bg-gray-800 transition-colors">
+                                                <td class="py-4 pl-4">{{ $appointment->appointment_date->format('M d, Y') }}</td>
+                                                <td class="px-6">{{ $appointment->appointment_date->format('h:i A') }}</td>
+                                                <td class="px-6">
+                                                    @if($appointment->status == 'completed')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">
+                                                            Completed
+                                                        </span>
+                                                    @elseif($appointment->status == 'booked')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
+                                                            Booked
+                                                        </span>
+                                                    @elseif($appointment->status == 'canceled')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">
+                                                            Cancelled
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-purple-600 text-white rounded-full">
+                                                            ℹ️ {{ ucfirst($appointment->status) }}
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-6 text-center">
+                                {{ $appointments->links() }}
+                            </div>
+                        @else
+                            <div class="text-center py-10 bg-gray-900 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-white">No appointments yet</h3>
+                                <p class="text-gray-500 mt-2">This patient hasn't had any appointments with you yet.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
             <!-- Footer -->
             <footer class="py-12 mt-16 border-t border-gray-800">
@@ -381,105 +520,327 @@
             </footer>
         </div>
     </div>
+        <!-- Booking Form -->
+                        <div id="booking-form" class="booking-form mt-6 border-t border-gray-700 pt-6 overflow-hidden transition-all duration-500 ease-in-out">
+                            <form action="{{ route('appointments.book') }}" method="POST" class="appointment-form p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                                @csrf
+                                <input type="hidden" name="doctor_id" value="{{ $doctor->id }}" data-doctor-id="{{ $doctor->id }}">
 
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>console.log(data); // Add this
+                                        <label for="appointment_date_{{ $doctor->user_id }}" class="block text-sm mb-2 text-gray-300 font-medium">
+                                            <i class="fas fa-calendar-alt text-teal-400 mr-2"></i> Select Date:
+                                        </label>
+
+                                        <input type="date"
+                                            id="appointment_date_{{ $doctor->id }}"
+                                            name="appointment_date"
+                                            class="w-full px-4 py-3 rounded-lg input-field bg-gray-900 border border-gray-700 focus:border-teal-400 focus:ring focus:ring-teal-400/20"
+                                            required
+                                            min="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <label class="block text-sm mb-2 text-gray-300 font-medium">
+                                        <i class="fas fa-clock text-teal-400 mr-2"></i> Available Time Slots:
+                                    </label>
+                                    <div class="time-slots grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-2">
+                                        <!-- Time slots will be dynamically loaded here -->
+                                    </div>
+                                    <div class="error-message mt-2 text-red-500"></div>
+                                    <input type="hidden" name="appointment_time" value="">
+                                </div>
+
+                                <div class="mt-6">
+                                    <label for="appointment_notes_{{ $doctor->id }}" class="block text-sm mb-2 text-gray-300 font-medium">
+                                        <i class="fas fa-comment-medical text-teal-400 mr-2"></i> Notes (Optional):
+                                    </label>
+                                    <textarea
+                                        id="appointment_notes_{{ $doctor->id }}"
+                                        name="notes"
+                                        rows="2"
+                                        class="w-full px-4 py-3 rounded-lg input-field bg-gray-900 border border-gray-700 focus:border-teal-400 focus:ring focus:ring-teal-400/20"
+                                        placeholder="Any specific concerns or information you'd like the doctor to know"></textarea>
+                                </div>
+
+                                <button type="submit" class="w-full btn-teal py-3 rounded-lg font-medium flex items-center justify-center mt-6">
+                                    <i class="fas fa-calendar-check mr-2"></i>
+                                    Confirm Appointment
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Appointment History Tab -->
+                    <div class="tab-content active" id="appointments-tab">
+                        @if($appointments->count() > 0)
+                            <div class="overflow-x-auto bg-black rounded-lg shadow-md">
+                                <table class="w-full text-sm text-white">
+                                    <thead>
+                                        <tr class="text-left bg-gray-900 border-b border-gray-700">
+                                            <th class="py-3 pl-4">Date</th>
+                                            <th class="py-3 px-6">Time</th>
+                                            <th class="py-3 px-6">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($appointments as $appointment)
+                                            <tr class="border-b border-gray-800 hover:bg-gray-800 transition-colors">
+                                                <td class="py-4 pl-4">{{ $appointment->appointment_date->format('M d, Y') }}</td>
+                                                <td class="px-6">{{ $appointment->appointment_date->format('h:i A') }}</td>
+                                                <td class="px-6">
+                                                    @if($appointment->status == 'completed')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">
+                                                            Completed
+                                                        </span>
+                                                    @elseif($appointment->status == 'booked')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
+                                                            Booked
+                                                        </span>
+                                                    @elseif($appointment->status == 'canceled')
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">
+                                                            Cancelled
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-block px-3 py-1 text-xs font-semibold bg-purple-600 text-white rounded-full">
+                                                            ℹ️ {{ ucfirst($appointment->status) }}
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-6 text-center">
+                                {{ $appointments->links() }}
+                            </div>
+                        @else
+                            <div class="text-center py-10 bg-gray-900 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-white">No appointments yet</h3>
+                                <p class="text-gray-500 mt-2">This patient hasn't had any appointments with you yet.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="py-12 mt-16 border-t border-gray-800">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-6 md:mb-0">
+                        <a href="{{ route('home') }}" class="flex items-center">
+                            <span class="med-teal text-2xl font-bold logo-pulse">MED</span><span class="text-2xl font-bold text-white">Book</span>
+                        </a>
+                        <p class="text-gray-400 mt-2">Your health, our priority</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">Contact</a>
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">About us</a>
+                        <a href="#" class="text-white hover:text-teal-300 transition-colors">Privacy Policy</a>
+                    </div>
+                </div>
+                <div class="text-center mt-8 text-gray-500 text-sm">
+                    © 2025 MEDBook. All rights reserved.
+                </div>
+            </footer>
+        </div>
+    </div>
     <script>
-        // Tab functionality
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize DOM references
+    const bookingFormElement = document.getElementById('booking-form');
+    const toggleBookingBtn = document.getElementById('toggle-booking-btn');
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove active class from all buttons and contents
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
+    // Time formatting utility
+    function formatTime(time) {
+        const [hours, minutes] = time.split(':');
+        const parsedHours = parseInt(hours, 10);
+        const ampm = parsedHours >= 12 ? 'PM' : 'AM';
+        const twelveHour = parsedHours % 12 || 12;
+        return `${twelveHour}:${minutes} ${ampm}`;
+    }
 
-                // Add active class to clicked button
-                this.classList.add('active');
+    // Toggle booking form with proper state management
+    function handleBookingToggle() {
+        const wasExpanded = bookingFormElement.style.maxHeight && bookingFormElement.style.maxHeight !== '0px';
 
-                // Show the corresponding content
-                const tabId = this.getAttribute('data-tab');
-                document.getElementById(`${tabId}-tab`).classList.add('active');
+        // Toggle current form
+        bookingFormElement.style.maxHeight = wasExpanded ? '0' : `${bookingFormElement.scrollHeight}px`;
+        toggleBookingBtn.classList.toggle('active', !wasExpanded);
+
+        // Toggle chevron icon if it exists
+        const toggleChevron = toggleBookingBtn.querySelector('.toggle-chevron');
+        if (toggleChevron) {
+            toggleChevron.classList.toggle('fa-chevron-down', wasExpanded);
+            toggleChevron.classList.toggle('fa-chevron-up', !wasExpanded);
+        }
+    }
+
+    // Date change handler with error handling
+    async function handleDateChange(e) {
+        const input = e.target;
+        const form = input.closest('form');
+const doctorId = @json($doctor->user_id);
+        const timeSlotsContainer = form.querySelector('.time-slots');
+        const errorMessage = form.querySelector('.error-message');
+
+        // Validate date is not a Friday (day 5)
+        const selectedDate = new Date(input.value);
+        if (selectedDate.getDay() === 5) { // 5 = Friday
+            errorMessage.textContent = "Appointments cannot be booked on Fridays. Please select another day.";
+            errorMessage.classList.add('active');
+            input.value = ""; // Clear the invalid date
+            timeSlotsContainer.innerHTML = '';
+            return;
+        }
+
+        errorMessage.classList.remove('active');
+
+        try {
+            timeSlotsContainer.innerHTML = `
+                <div class="col-span-full text-center py-4">
+                    <div class="loading-spinner inline-block w-6 h-6 border-2 border-teal-400 border-t-transparent rounded-full"></div>
+                </div>`;
+
+            const response = await fetch(`/doctors/${doctorId}/available-times?date=${input.value}`);
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const slots = await response.json();
+            timeSlotsContainer.innerHTML = '';
+
+            if (slots.length === 0) {
+                errorMessage.textContent = 'No available slots for this date';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            slots.forEach(slot => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-slot text-sm px-3 py-2 rounded-lg';
+                btn.textContent = formatTime(slot);
+
+                btn.addEventListener('click', () => {
+                    form.querySelectorAll('.time-slot').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    form.querySelector('input[name="appointment_time"]').value = slot;
+                });
+
+                timeSlotsContainer.appendChild(btn);
             });
+
+            // Update form height after loading slots
+            bookingFormElement.style.maxHeight = `${bookingFormElement.scrollHeight}px`;
+
+        } catch (error) {
+            errorMessage.textContent = 'Failed to load time slots. Please try again later.';
+            errorMessage.classList.add('active');
+            console.error('Date change error:', error);
+        }
+    }
+
+    // Form submission handler
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalHtml = submitBtn.innerHTML;
+        const errorMessage = form.querySelector('.error-message');
+
+        // Validate time slot is selected
+        const selectedTime = form.querySelector('input[name="appointment_time"]').value;
+        if (!selectedTime) {
+            errorMessage.textContent = 'Please select a time slot';
+            errorMessage.classList.add('active');
+            return;
+        }
+
+        try {
+            submitBtn.innerHTML = `
+                <div class="loading-spinner inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                Booking...
+            `;
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+console.log(data); // Add this
+            if (!response.ok) {
+                throw new Error(data.message || 'Booking failed');
+            }
+
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'bg-green-600 text-white p-4 rounded-lg mb-6 shadow-lg animate-fade-in';
+            notification.textContent = data.message || 'Appointment booked successfully!';
+            form.parentElement.insertAdjacentElement('beforebegin', notification);
+
+            // Reset form state
+            form.reset();
+            bookingFormElement.style.maxHeight = '0';
+            toggleBookingBtn.classList.remove('active');
+            form.querySelector('.time-slots').innerHTML = '';
+
+            // Remove notification after delay
+            setTimeout(() => notification.remove(), 5000);
+
+        } catch (error) {
+            errorMessage.textContent = error.message || 'An error occurred. Please try again.';
+            errorMessage.classList.add('active');
+        } finally {
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+
+            // Update active states
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
         });
-function deleteAppointment(appointmentId) {
-            if (confirm('Are you sure you want to delete this appointment?')) {
-                // Create a form and submit it to delete the appointment
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/appointments/${appointmentId}`;
+    });
 
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    // Event listener setup
+    if (toggleBookingBtn) {
+        toggleBookingBtn.addEventListener('click', handleBookingToggle);
+    }
 
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = csrfToken;
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        input.addEventListener('change', handleDateChange);
+    });
 
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-
-                form.appendChild(csrfInput);
-                form.appendChild(methodInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        // Example function for opening a modal to add a new medical note
-        function openNewNoteModal() {
-            const modal = document.getElementById('new-note-modal');
-            modal.classList.remove('hidden');
-        }
-
-        // Example function for closing a modal
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.add('hidden');
-        }
-
-        // Function to toggle patient allergies section
-        function toggleAllergies() {
-            const allergiesSection = document.getElementById('allergies-section');
-            allergiesSection.classList.toggle('hidden');
-
-            const allergiesToggle = document.getElementById('allergies-toggle');
-            if (allergiesSection.classList.contains('hidden')) {
-                allergiesToggle.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                `;
-            } else {
-                allergiesToggle.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                `;
-            }
-        }
-
-        // Function to toggle medical history section
-        function toggleMedicalHistory() {
-            const medicalHistorySection = document.getElementById('medical-history-section');
-            medicalHistorySection.classList.toggle('hidden');
-
-            const medicalHistoryToggle = document.getElementById('medical-history-toggle');
-            if (medicalHistorySection.classList.contains('hidden')) {
-                medicalHistoryToggle.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                `;
-            } else {
-                medicalHistoryToggle.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                `;
-            }
-        }
+document.querySelectorAll('.appointment-form').forEach(form => {
+    form.addEventListener('submit', (e) => {
+        e.preventDefault(); // Prevent native browser form submit
+        handleFormSubmit(e); // Your async logic
+    });
+});
+});
     </script>
 </body>
 </html>

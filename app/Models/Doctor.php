@@ -11,6 +11,8 @@ class Doctor extends Model
         'date_of_birth',
         'specialty',
         'fee',
+        'latitude',
+        'longitude',
     ];
 
     public function user()

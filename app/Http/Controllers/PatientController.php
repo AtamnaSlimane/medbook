@@ -102,6 +102,7 @@ public function appointments(Request $request)
 
     $upcomingAppointments = Appointment::where('patient_id', $userId)
         ->where('appointment_date', '>=', now())
+        ->whereIN('status',['booked','pending'])
         ->orderBy('appointment_date')
         ->get();
 
@@ -173,6 +174,7 @@ public function bookAppointment(Request $request)
         'doctor_id' => $request->doctor_id,
         'appointment_date' => $datetime,
         'status' => 'pending',
+        'notes'=>$request->notes,
     ]);
 
     // Return appropriate response based on request type
@@ -587,5 +589,19 @@ public function removeFavorite($doctorId)
     $patient->favoriteDoctors()->detach($doctorId);
 
     return back()->with('success', 'Doctor removed from favorites.');
+}
+
+public function mapview()
+{
+
+    $patient = Auth::user()->patient;
+    $user = auth()->user();
+    $doctors = Doctor::whereNotNull('latitude')
+        ->whereNotNull('longitude')
+        ->with('user') // assuming Doctor has relation to User
+        ->get();
+
+$favoriteDoctors = $patient->favoriteDoctors()->pluck('doctor_id')->toArray();
+    return view('patient.map', compact('doctors','user','favoriteDoctors'));
 }
 }

@@ -90,6 +90,8 @@ public function update(Request $request)
             'specialty',
             'date_of_birth',
             'fee',
+            'latitude',
+            'longitude',
         ]);
 
         // Update doctor data in the doctors table
