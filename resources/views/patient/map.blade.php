@@ -591,11 +591,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }).setView([36.19, 5.41], 13);
 
     // Custom styled dark theme tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(map);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
 
     const doctors = @json($doctors);
     const favoriteDoctors = @json($favoriteDoctors);
@@ -697,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function () {
         filteredDoctors.forEach(doctor => {
             if (doctor.latitude && doctor.longitude) {
                 const position = [parseFloat(doctor.latitude), parseFloat(doctor.longitude)];
-                const isFavorite = favoriteDoctors.includes(doctor.id);
+                const isFavorite = favoriteDoctors.includes(doctor.user_id);
 
                 // Add distance to doctor info if user location is available
                 let distanceInfo = '';
@@ -724,7 +723,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div class="popup-fee text-gray-300">Consultation: <span class="text-white">${doctor.fee} DZD</span></div>
                                 ${distanceInfo}
                                 <div class="flex mt-2 space-x-2">
-                                    <a href="/patient/doctor/${doctor.user_id}" class="popup-view-profile">View Profile</a>
+                                    <a href="/patient/doctor/${doctor.user_id}" class="popup-view-profile">Profile</a>
                                     ${activeFilters.userLocation ?
                                       `<a href="#" class="get-directions text-teal-400 text-sm" data-lat="${position[0]}" data-lng="${position[1]}">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

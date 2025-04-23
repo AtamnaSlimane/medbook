@@ -594,14 +594,16 @@ public function removeFavorite($doctorId)
 public function mapview()
 {
 
-    $patient = Auth::user()->patient;
     $user = auth()->user();
+
+    $patient = \App\Models\Patient::where('user_id', $user->id)->first();
     $doctors = Doctor::whereNotNull('latitude')
         ->whereNotNull('longitude')
         ->with('user') // assuming Doctor has relation to User
         ->get();
 
 $favoriteDoctors = $patient->favoriteDoctors()->pluck('doctor_id')->toArray();
+
     return view('patient.map', compact('doctors','user','favoriteDoctors'));
 }
 }
